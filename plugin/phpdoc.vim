@@ -12,8 +12,20 @@ let g:pdv_cfg_CommentSingle = "//"
 " Default values
 let g:pdv_cfg_Type = "mixed"
 
+if !exists("g:pdv_cfg_File_Description")
+    let g:pdv_cfg_Licence = "File description here"
+endif
+
 if !exists("g:pdv_cfg_Author")
     let g:pdv_cfg_Author = "Your name <yourmail@yourhost.com>"
+endif
+
+if !exists("g:pdv_cfg_Licence")
+    let g:pdv_cfg_Licence = "LICENCE"
+endif
+
+if !exists("g:pdv_cfg_Link")
+    let g:pdv_cfg_Licence = "http://www.yourwebsite.com"
 endif
 
 let g:pdv_cfg_ReturnVal = "void"
@@ -215,6 +227,8 @@ func! PhpDocFunc()
     exe l:txtBOL . g:pdv_cfg_Comment1 . funcname . " " . g:pdv_cfg_EOL
     exe l:txtBOL . g:pdv_cfg_Commentn . g:pdv_cfg_EOL
 
+    let l:needLine = 0
+
     while (l:parameters != ",") && (l:parameters != "")
         " Save 1st parameter
         let _p = substitute (l:parameters, '\([^,]*\) *, *\(.*\)', '\1', "")
@@ -235,21 +249,28 @@ func! PhpDocFunc()
             let l:paramtype = " " . l:paramtype
         endif
         exe l:txtBOL . g:pdv_cfg_Commentn . "@param" . l:paramtype . " $" . l:paramname . " " . l:paramname . " ". g:pdv_cfg_EOL
+        let l:needLine = 1
     endwhile
 
     if l:static != ""
         exe l:txtBOL . g:pdv_cfg_Commentn . "@static" . g:pdv_cfg_EOL
+        let l:needLine = 1
     endif
     if l:abstract != ""
         exe l:txtBOL . g:pdv_cfg_Commentn . "@abstract" . g:pdv_cfg_EOL
+        let l:needLine = 1
     endif
     if l:final != ""
         exe l:txtBOL . g:pdv_cfg_Commentn . "@final" . g:pdv_cfg_EOL
+        let l:needLine = 1
     endif
     if l:scope != ""
         exe l:txtBOL . g:pdv_cfg_Commentn . "@access " . l:scope . g:pdv_cfg_EOL
+        let l:needLine = 1
     endif
-    exe l:txtBOL . g:pdv_cfg_Commentn . g:pdv_cfg_EOL
+    if l:needLine == 1
+        exe l:txtBOL . g:pdv_cfg_Commentn . g:pdv_cfg_EOL
+    endif
     exe l:txtBOL . g:pdv_cfg_Commentn . "@return " . g:pdv_cfg_ReturnVal . g:pdv_cfg_EOL
 
     " Close the comment block.
@@ -325,6 +346,9 @@ func! PhpDocClass()
 
     let l:modifier = substitute (l:name, g:pdv_re_class, '\1', "g")
     let l:classname = substitute (l:name, g:pdv_re_class, '\3', "g")
+    let l:test = split(l:classname, '_')
+    let l:category = l:test[0]
+    let l:package = l:test[1]
     let l:extends = g:pdv_cfg_Uses == 1 ? substitute (l:name, g:pdv_re_class, '\5', "g") : ""
     let l:interfaces = g:pdv_cfg_Uses == 1 ? substitute (l:name, g:pdv_re_class, '\7', "g") . "," : ""
 
@@ -336,11 +360,33 @@ func! PhpDocClass()
     " Local indent
     let l:txtBOL = g:pdv_cfg_BOL . l:indent
 
+
+    " FILE DOC
+    exe l:txtBOL . g:pdv_cfg_CommentHead . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Comment1 . g:pdv_cfg_File_Description . " " . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . g:pdv_cfg_EOL
+
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@category " . l:category . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@package  " . l:package . g:pdv_cfg_EOL
+
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@author   " . g:pdv_cfg_Author g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@license  " . g:pdv_cfg_License . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@link     " . g:pdv_cfg_Link . g:pdv_cfg_EOL
+
+    " Close the comment block.
+    exe l:txtBOL . g:pdv_cfg_CommentTail . g:pdv_cfg_EOL
+
+
+    " CLASS DOC
     exe l:txtBOL . g:pdv_cfg_CommentHead . g:pdv_cfg_EOL
     exe l:txtBOL . g:pdv_cfg_Comment1 . l:classname . " " . g:pdv_cfg_EOL
     exe l:txtBOL . g:pdv_cfg_Commentn . g:pdv_cfg_EOL
+
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@category " . l:category . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@package  " . l:package . g:pdv_cfg_EOL
+
     if l:extends != "" && l:extends != "implements"
-        exe l:txtBOL . g:pdv_cfg_Commentn . "@uses " . l:extends . g:pdv_cfg_EOL
+        exe l:txtBOL . g:pdv_cfg_Commentn . "@uses     " . l:extends . g:pdv_cfg_EOL
     endif
 
     while (l:interfaces != ",") && (l:interfaces != "")
@@ -348,7 +394,7 @@ func! PhpDocClass()
         let interface = substitute (l:interfaces, '\([^, ]*\) *, *\(.*\)', '\1', "")
         " Remove this one from list
         let l:interfaces = substitute (l:interfaces, '\([^, ]*\) *, *\(.*\)', '\2', "")
-        exe l:txtBOL . g:pdv_cfg_Commentn . "@uses " . l:interface . g:pdv_cfg_EOL
+        exe l:txtBOL . g:pdv_cfg_Commentn . "@uses     " . l:extends . l:interface . g:pdv_cfg_EOL
     endwhile
 
     if l:abstract != ""
@@ -357,8 +403,9 @@ func! PhpDocClass()
     if l:final != ""
         exe l:txtBOL . g:pdv_cfg_Commentn . "@final" . g:pdv_cfg_EOL
     endif
-    exe l:txtBOL . g:pdv_cfg_Commentn . "@author " . g:pdv_cfg_Author g:pdv_cfg_EOL
-    " exe l:txtBOL . g:pdv_cfg_Commentn . "@license " . g:pdv_cfg_License . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@author   " . g:pdv_cfg_Author g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@license  " . g:pdv_cfg_License . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Commentn . "@link     " . g:pdv_cfg_Link . g:pdv_cfg_EOL
 
     " Close the comment block.
     exe l:txtBOL . g:pdv_cfg_CommentTail . g:pdv_cfg_EOL
