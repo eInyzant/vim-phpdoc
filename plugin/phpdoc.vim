@@ -354,6 +354,21 @@ func! PhpDocFunc(end_line)
     let l:modifier = substitute (l:name, g:pdv_re_func, '\1', "g")
     let l:funcname = substitute (l:name, g:pdv_re_func, '\2', "g")
     let l:funcname = substitute (l:funcname, '__construct', 'Constructor', "g") " Rename constructors
+
+    let finalName = ''
+    let l:count = 0
+    for letter in split(l:funcname, '\zs')
+      if match(letter, '\u') != -1
+        let finalName = finalName . ' '
+      endif
+      if l:count == 0
+        let finalName = finalName . toupper(letter)
+      else
+        let finalName = finalName . letter
+      endif
+      let l:count = l:count + 1
+    endfor
+
     let l:parameters = substitute (l:name, g:pdv_re_func, '\3', "g") . ","
     let l:params = substitute (l:name, g:pdv_re_func, '\3', "g")
     let l:params = substitute (l:params, '[$  ]', '', "g")
@@ -376,7 +391,7 @@ func! PhpDocFunc(end_line)
 
     exe l:txtBOL . g:pdv_cfg_CommentHead . g:pdv_cfg_EOL
     " added folding
-    exe l:txtBOL . g:pdv_cfg_Comment1 . funcname . g:pdv_cfg_EOL
+    exe l:txtBOL . g:pdv_cfg_Comment1 . finalName . g:pdv_cfg_EOL
     exe l:txtBOL . g:pdv_cfg_CommentBlank . g:pdv_cfg_EOL
 
     while (l:parameters != ",") && (l:parameters != "")
@@ -413,10 +428,10 @@ func! PhpDocFunc(end_line)
         exe l:txtBOL . g:pdv_cfg_CommentBlank . g:pdv_cfg_EOL
         exe l:txtBOL . g:pdv_cfg_Commentn . "@final" . g:pdv_cfg_EOL
     endif
-    if l:scope != ""
-        exe l:txtBOL . g:pdv_cfg_CommentBlank . g:pdv_cfg_EOL
-        exe l:txtBOL . g:pdv_cfg_Commentn . "@access " . l:scope . g:pdv_cfg_EOL
-    endif
+    "if l:scope != ""
+        "exe l:txtBOL . g:pdv_cfg_CommentBlank . g:pdv_cfg_EOL
+        "exe l:txtBOL . g:pdv_cfg_Commentn . "@access " . l:scope . g:pdv_cfg_EOL
+    "endif
     if l:funcname != "Constructor"
         exe l:txtBOL . g:pdv_cfg_CommentBlank . g:pdv_cfg_EOL
         exe l:txtBOL . g:pdv_cfg_Commentn . "@return " . l:returnType . g:pdv_cfg_EOL
